@@ -87,8 +87,10 @@ Tired of refreshing the Unifi store only to see the Viewport out of stock? Me to
 
 4. **Configure `.env`**
 
-   Edit `.env` with your credentials and Protect Live View URL:
-
+   Edit `.env` with your credentials and Protect Live View URL.
+   
+   If you wish to select a different Live View layout than the default, notice that the url changes when you switch. Use the appropriate url in this file to launch your preferred view.
+   
    ```ini
    USERNAME=YourLocalUsername
    PASSWORD=YourLocalPassword
@@ -105,7 +107,7 @@ Tired of refreshing the Unifi store only to see the Viewport out of stock? Me to
 
    The `FLASK_RUN_HOST`, `FLASK_RUN_PORT` and `SECRET` are optional. Feel free to delete them if you're not using the API.
 
-5. **Configure the `config.ini` file**
+6. **Configure the `config.ini` file**
 
    Open the `config.ini` file and check what options there are available for customization of how the script runs.
 
@@ -140,7 +142,7 @@ Tired of refreshing the Unifi store only to see the Viewport out of stock? Me to
    BROWSER_BINARY=/usr/bin/google-chrome-stable
    ```
 
-6. **Test and Run**
+7. **Test and Run**
 
    ```bash
    viewport -h
