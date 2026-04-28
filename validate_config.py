@@ -104,7 +104,7 @@ def parse_restart_times(raw: str, errors: list[str]) -> list[time]:
 
 def validate_env(env_file: Path, api: bool, errors: list[str]) -> tuple[str, str, str, str, int, str, dict]:
     try:
-        load_dotenv(dotenv_path=env_file)
+        load_dotenv(dotenv_path=env_file, override=True)
         values = dotenv_values(env_file)
         allowed = {
             "USERNAME", "PASSWORD", "URL",
