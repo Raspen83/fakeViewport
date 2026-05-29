@@ -21,6 +21,7 @@ class AppConfig:
     BROWSER_PROFILE_PATH: str
     BROWSER_BINARY: str
     HEADLESS: bool
+    HIDE_CURSOR: bool
     BROWSER: str
     # Logging
     LOG_FILE_FLAG: bool
@@ -294,6 +295,7 @@ def validate_config(
         BROWSER_PROFILE_PATH=profile_path,
         BROWSER_BINARY=binary,
         HEADLESS=headless,
+        HIDE_CURSOR=hide_cursor,
         BROWSER=browser,
         LOG_FILE_FLAG=log_file_flag,
         LOG_CONSOLE=log_console,

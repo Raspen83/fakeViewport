@@ -588,7 +588,11 @@ def get_tuple(name: str) -> Tuple[int, ...]:
     return tuple(int(x) for x in _version_re.findall(name))
 def get_local_driver(mgr_or_browser) -> Optional[Path]:
     """
-    Return the newest cached driver Path without relying on webdriver_manager internals.
+    Return a usable driver Path without downloading.
+
+    Search order:
+      1. Alongside BROWSER_BINARY (snap/flatpak bundles — always version-matched).
+      2. WDM cache under any OS-type subdirectory (not just linux64).
 
     Accepts either a webdriver_manager manager instance or a browser string.
     """
@@ -601,32 +605,45 @@ def get_local_driver(mgr_or_browser) -> Optional[Path]:
             browser = "firefox"
         elif "chrome" in cls:
             browser = "chrome"
-    except Exception: 
+    except Exception:
         pass
     if isinstance(mgr_or_browser, str):
         browser = mgr_or_browser.lower()
 
     if browser not in ("chrome", "chromium", "firefox"):
         return None
-    # Compute conventional cache locations used by webdriver_manager
-    base = Path.home() / ".wdm" / "drivers"
-    if browser == "firefox":
-        platform_dir = base / "geckodriver" / "linux64"
-        bin_name = "geckodriver"
-    else:
-        # chrome or chromium both use chromedriver
-        platform_dir = base / "chromedriver" / "linux64"
-        bin_name = "chromedriver"
 
-    if not platform_dir.exists():
-        return None
-    versions = [d for d in platform_dir.iterdir() if d.is_dir()]
-    if not versions:
-        return None
-    # Newest by semantic-ish version comparison
-    newest = max(versions, key=lambda d: get_tuple(d.name))
-    candidate = newest / bin_name
-    return candidate if candidate.exists() and os.access(candidate, os.X_OK) else None
+    bin_name = "geckodriver" if browser == "firefox" else "chromedriver"
+
+    # 1. Bundled driver alongside the configured browser binary
+    try:
+        candidate = Path(BROWSER_BINARY).parent / bin_name
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return candidate
+    except Exception:
+        pass
+
+    # 2. WDM cache — try linux64 first, then any other OS-type directory
+    base = Path.home() / ".wdm" / "drivers"
+    driver_root = base / ("geckodriver" if browser == "firefox" else "chromedriver")
+    if driver_root.exists():
+        try:
+            os_dirs = sorted(
+                (d for d in driver_root.iterdir() if d.is_dir()),
+                key=lambda d: d.name != "linux64",  # linux64 first
+            )
+            for os_dir in os_dirs:
+                versions = [d for d in os_dir.iterdir() if d.is_dir()]
+                if not versions:
+                    continue
+                newest = max(versions, key=lambda d: get_tuple(d.name))
+                candidate = newest / bin_name
+                if candidate.exists() and os.access(candidate, os.X_OK):
+                    return candidate
+        except Exception:
+            pass
+
+    return None
 def get_driver_path(browser: str, timeout: int = 60) -> str:
     """
     Return a WebDriver path, preferring an already-cached driver to avoid
@@ -689,12 +706,10 @@ def get_driver_path(browser: str, timeout: int = 60) -> str:
             )
             log_error(msg)
             api_status("Driver download slow; fell back to older driver")
-            executor.shutdown(wait=False)
             return str(fallback)
         msg = f"{browser.title()} driver download stuck (> {timeout}s) and no local driver found"
         log_error(msg)
         api_status("Driver download stuck; restart computer if it persists")
-        executor.shutdown(wait=False)
         raise DriverDownloadStuckError(msg)
     except Exception as e:
         # Any extraction/write error (including ETXTBUSY) → try cache before giving up
@@ -705,7 +720,6 @@ def get_driver_path(browser: str, timeout: int = 60) -> str:
                 f"using existing driver {fallback.parent.name}"
             )
             api_status("Driver install error; fell back to cached driver")
-            executor.shutdown(wait=False)
             return str(fallback)
         # No fallback available → surface a consistent error type
         log_error(
@@ -713,7 +727,6 @@ def get_driver_path(browser: str, timeout: int = 60) -> str:
             e
         )
         api_status("Driver install failed; no cached driver available")
-        executor.shutdown(wait=False)
         raise DriverDownloadStuckError(
             f"{browser.title()} driver install failed with {e.__class__.__name__}: {e}"
         )
@@ -826,7 +839,7 @@ def status_handler():
         monitoring = process_handler("monitoring.py", action="check")
         # Convert uptime_seconds to months, days, hours, minutes, and seconds
         uptime_months = int(uptime_seconds // 2592000)
-        uptime_days = int(uptime_seconds // 86400)
+        uptime_days = int((uptime_seconds % 2592000) // 86400)
         uptime_hours = int((uptime_seconds % 86400) // 3600)
         uptime_minutes = int((uptime_seconds % 3600) // 60)
         uptime_seconds = int(uptime_seconds % 60)
@@ -1256,11 +1269,8 @@ def check_driver(driver):
         InvalidSessionIdException: If the session ID is invalid.
         Exception: Propagates any other Selenium-related error.
     """
-    try:
-        driver.title  # Accessing the title will raise an exception if the driver is not alive
-        return True
-    except (WebDriverException, InvalidSessionIdException, Exception):
-        raise
+    driver.title  # raises WebDriverException / InvalidSessionIdException if dead
+    return True
 def check_for_title(driver, title=None):
     """
     Wait for the page title (or a substring) to load.
@@ -1311,10 +1321,9 @@ def check_unable_to_stream(driver):
         bool: ``True`` if the message is present, otherwise ``False``.
     """
     try:
-        elements = driver.execute_script("""
-            return Array.from(document.querySelectorAll('*')).filter(el => el.innerHTML.includes('Unable to Stream'));
-        """)
-        return bool(elements)
+        return driver.execute_script(
+            "return (document.body.textContent || '').includes('Unable to Stream');"
+        )
     except WebDriverException:
         log_error("Tab Crashed.")
         api_status("Tab Crashed")
@@ -1720,7 +1729,8 @@ def handle_page(driver):
     while True:
         if "Dashboard" in driver.title:
             time.sleep(3)
-            handle_elements(driver)
+            if HIDE_CURSOR:
+                handle_elements(driver)
             handle_pause_banner(driver)
             return True
         elif "Ubiquiti Account" in driver.title or "UniFi OS" in driver.title:

@@ -74,6 +74,7 @@ def provide_dummy_config(tmp_path_factory):
         BROWSER_PROFILE_PATH="",
         BROWSER_BINARY="",
         HEADLESS=False,
+        HIDE_CURSOR=True,
         BROWSER="",
         # logging config
         LOG_FILE_FLAG=False,
