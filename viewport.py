@@ -372,6 +372,17 @@ def inhibit_screen_sleep():
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except (subprocess.CalledProcessError, FileNotFoundError):
             logging.warning(f"inhibit_screen_sleep: '{' '.join(cmd)}' failed — screen may sleep")
+    threading.Thread(target=_screen_keep_alive, daemon=True).start()
+def _screen_keep_alive():
+    """Reset the X11 idle timer every 60 s to defeat DE power managers."""
+    while True:
+        time.sleep(60)
+        for cmd in (["xset", "s", "reset"], ["xdg-screensaver", "reset"]):
+            try:
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                break
+            except FileNotFoundError:
+                continue
 def api_handler(*, standalone: bool = False):
     """
     Ensure the Flask monitoring API is running.
