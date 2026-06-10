@@ -1092,7 +1092,7 @@ def browser_handler(url):
                 chrome_options.add_argument("--disable-dev-shm-usage")
                 chrome_options.add_argument("--no-sandbox")
                 chrome_options.add_argument("--enable-features=VaapiVideoDecoder,VaapiVideoEncoder")
-                chrome_options.add_argument("--use-gl=egl")
+                chrome_options.add_argument("--use-gl=desktop")
                 chrome_options.add_argument("--enable-gpu-rasterization")
                 chrome_options.add_argument("--ignore-gpu-blocklist")
                 chrome_options.add_argument('--ignore-certificate-errors') 
