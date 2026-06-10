@@ -28,8 +28,6 @@ from css_selectors import (
     CSS_FULLSCREEN_BUTTON,
     CSS_LOADING_DOTS,
     CSS_LIVEVIEW_WRAPPER,
-    CSS_PLAYER_OPTIONS,
-    CSS_CURSOR,
     CSS_CLOSE_BUTTON
 )
 # --------------------------------------------------------------------------- # 
@@ -1367,21 +1365,17 @@ def handle_elements(driver, hide_delay_ms: int = 3000):
             if (window.__cursorHideInit__) return;
             window.__cursorHideInit__ = true;
 
-            const CURSORS  = Array.isArray(arguments[0]) ? arguments[0] : [arguments[0]];
-            const OPTIONS  = Array.isArray(arguments[1]) ? arguments[1] : [arguments[1]];
-            const DELAY    = arguments[2];
+            const WRAPPER  = arguments[0];
+            const DELAY    = arguments[1];
             const STYLE_ID = 'hideCursorAndOptionsStyle';
-
-            const cursorSel = CURSORS.map(c => '.' + c).join(',');
-            const optionSel = OPTIONS.map(c => '.' + c).join(',');
 
             function addStyle() {
                 if (!document.getElementById(STYLE_ID)) {
                     const s = document.createElement('style');
                     s.id = STYLE_ID;
                     s.textContent = `
-                        ${cursorSel} { cursor: none !important; }
-                        ${optionSel} { z-index: 0 !important; }`;
+                        ${WRAPPER} { cursor: none !important; }
+                        ${WRAPPER} * { pointer-events: none !important; }`;
                     document.head.appendChild(s);
                 }
             }
@@ -1390,17 +1384,16 @@ def handle_elements(driver, hide_delay_ms: int = 3000):
                 if (s) s.remove();
             }
 
-            addStyle();                       // hidden at first
+            addStyle();
             let t;
             window.addEventListener('mousemove', () => {
-                removeStyle();                // show on movement
+                removeStyle();
                 clearTimeout(t);
                 t = setTimeout(addStyle, DELAY);
             }, { passive: true });
-        })(arguments[0], arguments[1], arguments[2]);
+        })(arguments[0], arguments[1]);
         """,
-        CSS_CURSOR,     
-        CSS_PLAYER_OPTIONS,
+        CSS_LIVEVIEW_WRAPPER,
         hide_delay_ms
     )
 def handle_pause_banner(driver):

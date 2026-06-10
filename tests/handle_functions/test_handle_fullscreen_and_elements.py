@@ -8,26 +8,16 @@ from selenium.common.exceptions import WebDriverException
 # --------------------------------------------------------------------------- # 
 def test_handle_elements_hides_cursor_and_player_options():
     driver = MagicMock()
-
-    # handle_elements now expects lists (even if length‑1)
-    viewport.CSS_CURSOR = ["cursor-class"]
-    viewport.CSS_PLAYER_OPTIONS = ["player-options-class"]
-    viewport.hide_delay_ms = 3000       
+    viewport.CSS_LIVEVIEW_WRAPPER = "div[class*='liveView__LiveViewWrapper']"
 
     viewport.handle_elements(driver)
 
-    # Exactly ONE execute_script call
     driver.execute_script.assert_called_once()
-    script, cursors, options, delay = driver.execute_script.call_args[0]
+    script, wrapper, delay = driver.execute_script.call_args[0]
 
-    # correct style‑tag id inside the injected JS
     assert "hideCursorAndOptionsStyle" in script
-
-    # the two selector arrays are forwarded unchanged
-    assert cursors  == ["cursor-class"]
-    assert options  == ["player-options-class"]
-
-    # delay propagated
+    assert "pointer-events: none" in script
+    assert wrapper == "div[class*='liveView__LiveViewWrapper']"
     assert delay == 3000
 
 @pytest.mark.parametrize("invocations", [1, 2, 3])
