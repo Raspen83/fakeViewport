@@ -361,6 +361,17 @@ def api_status(msg):
     """
     with open(status_file, 'w') as f:
         f.write(msg)
+def inhibit_screen_sleep():
+    """Disable X11 screensaver and DPMS so the display stays on."""
+    for cmd in (
+        ["xset", "s", "off"],
+        ["xset", "-dpms"],
+        ["xset", "s", "noblank"],
+    ):
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logging.warning(f"inhibit_screen_sleep: '{' '.join(cmd)}' failed — screen may sleep")
 def api_handler(*, standalone: bool = False):
     """
     Ensure the Flask monitoring API is running.
@@ -2046,6 +2057,7 @@ def main():
             f.write(str(datetime.now()))
     # Check and kill any existing instance of viewport.py and reset the restart_file flag
     if other_running: process_handler("viewport.py", action="kill")
+    inhibit_screen_sleep()
     driver = browser_handler(url)
     # Start the handle_view function in a separate thread
     threading.Thread(target=handle_view, args=(driver, url)).start()
