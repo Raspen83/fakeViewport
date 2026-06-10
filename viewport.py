@@ -1378,7 +1378,8 @@ def handle_elements(driver, hide_delay_ms: int = 3000):
                     s.id = STYLE_ID;
                     s.textContent = `
                         ${WRAPPER} { cursor: none !important; }
-                        ${WRAPPER} * { pointer-events: none !important; }`;
+                        ${WRAPPER} * { pointer-events: none !important; }
+                        #pause-banner, #pause-banner * { pointer-events: auto !important; }`;
                     document.head.appendChild(s);
                 }
             }
