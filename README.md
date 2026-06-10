@@ -115,6 +115,14 @@ Tired of refreshing the Unifi store only to see the Viewport out of stock? Me to
 
    ### Chrome or Chromium
 
+   > **Note:** If you are on Ubuntu and installed Chromium via `snap`, hardware video decoding (VA-API) will not work due to snap's sandbox restrictions. For best performance, use **Google Chrome** (`.deb`) instead:
+   > ```bash
+   > wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+   > sudo apt install ./google-chrome-stable_current_amd64.deb
+   > rm google-chrome-stable_current_amd64.deb
+   > ```
+   > Then set `BROWSER_PROFILE_PATH` to a fresh directory (e.g. `/home/your-user/.config/fakeviewport-chrome/`) so there is no conflict with your existing browser profile.
+
    Navigate to `chrome://version/` and check the **Profile Path.** It should say something along the lines of:
 
    `/home/your-user/.config/chromium/Default`.
