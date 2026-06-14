@@ -1,0 +1,61 @@
+name: Trivy Scan
+
+# Push-only: outside fork contributors cannot trigger this, which keeps the
+# self-hosted runner safe even on public repos. Do NOT add fork pull_request.
+on:
+  push:
+
+jobs:
+  trivy:
+    runs-on: [self-hosted, trivy]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Report mode: all severities, table output. Trivy returns 0 here (no
+      # --exit-code), so this step never fails the run — it just captures findings.
+      - name: Trivy report
+        run: |
+          trivy fs . \
+            --scanners vuln,secret,misconfig \
+            --format table \
+            --output trivy-report.txt
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+
+      # Gate: fails the run (exit 1) if any HIGH/CRITICAL finding exists.
+      # Reuses the DB cache from the report step, so this is fast.
+      - name: Trivy gate (HIGH/CRITICAL)
+        run: |
+          trivy fs . \
+            --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --exit-code 1
+
+      # Always email, pass or fail. job.status reflects the gate result.
+      - name: Email result
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Trivy ${{ job.status }} — ${{ github.repository }}@${{ github.sha }}"
+          to: ${{ secrets.MAIL_TO }}
+          # Sender address. Set MAIL_FROM to either a bare address
+          # (noreply@it-total.se) or a named form (Trivy Runner <noreply@it-total.se>).
+          from: ${{ secrets.MAIL_FROM }}
+          body: |
+            Repository: ${{ github.repository }}
+            Branch:     ${{ github.ref_name }}
+            Commit:     ${{ github.sha }}
+            Status:     ${{ job.status }}
+
+            Full Trivy report attached.
+          attachments: trivy-report.txt
