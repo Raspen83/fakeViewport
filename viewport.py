@@ -1344,9 +1344,9 @@ def check_unable_to_stream(driver):
         bool: ``True`` if the message is present, otherwise ``False``.
     """
     try:
-        return driver.execute_script(
+        return bool(driver.execute_script(
             "return (document.body.textContent || '').includes('Unable to Stream');"
-        )
+        ))
     except WebDriverException:
         log_error("Tab Crashed.")
         api_status("Tab Crashed")

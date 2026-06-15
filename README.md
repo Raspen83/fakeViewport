@@ -4,7 +4,6 @@
 
 [![Python](https://github.com/Samuel1698/fakeViewport/actions/workflows/python-test.yml/badge.svg)](https://github.com/Samuel1698/fakeViewport/actions/workflows/python-test.yml)
 [![CodeQL](https://github.com/Samuel1698/fakeViewport/actions/workflows/codeql.yml/badge.svg)](https://github.com/Samuel1698/fakeViewport/actions/workflows/codeql.yml)
-[![codecov](https://codecov.io/github/Samuel1698/fakeViewport/graph/badge.svg?token=mPKJSAYXH5)](https://codecov.io/github/Samuel1698/fakeViewport)
 
 <!-- [END BADGES] -->
 
