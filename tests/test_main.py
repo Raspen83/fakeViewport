@@ -19,6 +19,8 @@ def disable_external_side_effects(monkeypatch):
     monkeypatch.setattr(viewport.time, "sleep", lambda *args, **kwargs: None)
     # never actually fork a process
     monkeypatch.setattr(viewport.subprocess, "Popen", lambda *args, **kwargs: None)
+    # never run xset/DPMS commands or start the screen keep-alive thread
+    monkeypatch.setattr(viewport, "inhibit_screen_sleep", lambda *args, **kwargs: None)
 # --------------------------------------------------------------------------- # 
 # Test conftest file handler isolation
 # --------------------------------------------------------------------------- # 
